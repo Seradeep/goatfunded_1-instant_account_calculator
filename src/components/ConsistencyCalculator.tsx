@@ -12,20 +12,89 @@ const ConsistencyCalculator = () => {
     const [numDaysInput, setNumDaysInput] = useState('5'); // String state for input
     const [days, setDays] = useState<DayData[]>([]);
     const [ruleType, setRuleType] = useState<string>('15_promo'); // Default to 1K $1 Promo
+    const [accountSize, setAccountSize] = useState(1000); // Default Account Size
+    const [exchangeRate, setExchangeRate] = useState(86); // Default INR rate
+    const [isLoaded, setIsLoaded] = useState(false); // To prevent hydration mismatch or overwrite
 
-    // Initialize days when numDays changes, preserving existing data if expanding
+    // Load from LocalStorage on mount
     useEffect(() => {
+        const savedDays = localStorage.getItem('consistency_days');
+        const savedNumDays = localStorage.getItem('consistency_numDays');
+        const savedRule = localStorage.getItem('consistency_rule');
+
+        if (savedNumDays) {
+            setNumDays(parseInt(savedNumDays));
+            setNumDaysInput(savedNumDays);
+        }
+
+        if (savedRule) {
+            setRuleType(savedRule);
+        }
+
+        if (savedDays) {
+            try {
+                setDays(JSON.parse(savedDays));
+            } catch (e) {
+                console.error("Failed to parse saved days", e);
+            }
+        }
+        setIsLoaded(true);
+    }, []);
+
+    useEffect(() => {
+        fetch('https://api.exchangerate-api.com/v4/latest/USD')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.rates && data.rates.INR) {
+                    setExchangeRate(data.rates.INR);
+                }
+            })
+            .catch(err => console.error('Failed to fetch rates', err));
+    }, []);
+
+    // Save to LocalStorage whenever state changes
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('consistency_days', JSON.stringify(days));
+            localStorage.setItem('consistency_numDays', numDays.toString());
+            localStorage.setItem('consistency_rule', ruleType);
+            localStorage.setItem('consistency_accountSize', accountSize.toString());
+        }
+    }, [days, numDays, ruleType, accountSize, isLoaded]);
+
+    // Initialize days when numDays changes, preserving existing data if expanding. 
+    // Only run if loaded to avoid overwriting with defaults before load.
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        // If we have saved days that match the count, don't reset them.
+        // We only want to resize if the user explicitly changed the number.
+        // Simple check: if days.length is already numDays, do nothing.
+        if (days.length === numDays) return;
+
         const newDays = Array.from({ length: numDays }, (_, i) => ({
             id: i + 1,
             profit: days[i]?.profit || 0
         }));
         setDays(newDays);
-    }, [numDays]);
+    }, [numDays, isLoaded]); // Removed 'days' from dependency to avoid loop, handled by length check logic
 
     const handleProfitChange = (index: number, val: string) => {
         const newDays = [...days];
         newDays[index].profit = parseFloat(val) || 0;
         setDays(newDays);
+    };
+
+    const clearData = () => {
+        if (confirm('Are you sure you want to clear all data?')) {
+            setNumDays(5);
+            setNumDaysInput('5');
+            setDays(Array.from({ length: 5 }, (_, i) => ({ id: i + 1, profit: 0 })));
+            setRuleType('15_promo');
+            localStorage.removeItem('consistency_days');
+            localStorage.removeItem('consistency_numDays');
+            localStorage.removeItem('consistency_rule');
+        }
     };
 
     // Calculations
@@ -53,13 +122,24 @@ const ConsistencyCalculator = () => {
     const consistencyPercentage = isProfitable ? (maxDay.profit / totalProfit) * 100 : 0;
     const isPassed = isProfitable && consistencyPercentage <= rulePercent;
 
+    const minDailyProfit = accountSize * 0.005; // 0.5% required
+    const validDaysCount = days.filter(d => d.profit >= minDailyProfit).length;
+
+    // Dynamic Min Trading Days: 3 days for $1 promo, 5 days for others
+    const getMinTradingDays = (type: string) => {
+        if (type === '15_promo') return 3;
+        return 5;
+    };
+    const MIN_TRADING_DAYS = getMinTradingDays(ruleType);
+
     // Withdrawal Logic
     const MIN_WITHDRAWAL_PROFIT = 35; // $35 Minimum profit required
     const PROFIT_SPLIT = 0.80; // 80% split
 
-    const isWithdrawalEligible = isPassed && totalProfit >= MIN_WITHDRAWAL_PROFIT;
+    const isWithdrawalEligible = isPassed && totalProfit >= MIN_WITHDRAWAL_PROFIT && validDaysCount >= MIN_TRADING_DAYS;
     const potentialPayout = isWithdrawalEligible ? totalProfit * PROFIT_SPLIT : 0;
     const payoutShortfall = MIN_WITHDRAWAL_PROFIT - totalProfit;
+    const daysShortfall = Math.max(0, MIN_TRADING_DAYS - validDaysCount);
 
     // Suggestions to fix
     // If breached, we need Total * Threshold >= MaxDay
@@ -75,8 +155,8 @@ const ConsistencyCalculator = () => {
                     Consistency Analysis & Risk Calculator
                 </h2>
                 <p className="text-[var(--text-secondary)]">
-                    Optimize your trading strategy for the {ruleType === '15_promo' ? '1K $1 Instant Account' : ruleType + '% Rule'} program.
-                    Calculate daily profit limits and ensure payout eligibility.
+                    Optimize your trading strategy for the {ruleType === '15_promo' ? '1K Instant Account' : ruleType + '% Rule'} program.
+                    Calculate daily profit limits, track valid trading days, and ensure payout eligibility.
                 </p>
             </div>
 
@@ -91,9 +171,28 @@ const ConsistencyCalculator = () => {
                             onChange={(e) => setRuleType(e.target.value)}
                             className="w-full p-3 rounded-lg bg-[var(--surface-2)] border border-gray-700 text-white focus:border-[var(--primary)] outline-none"
                         >
-                            <option value="15_promo">1K $1 Instant Account (15% Rule)</option>
-                            <option value="15">Instant GOAT / Blitz (15% Rule)</option>
-                            <option value="20">Instant PRO (20% Rule)</option>
+                            <option value="15_promo">1K Instant Account (3 Days / 15%)</option>
+                            <option value="15">Instant GOAT / Blitz (5 Days / 15%)</option>
+                            <option value="20">Instant PRO (5 Days / 20%)</option>
+                        </select>
+                    </div>
+
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                            Account Size ($)
+                        </label>
+                        <select
+                            value={accountSize}
+                            onChange={(e) => setAccountSize(parseInt(e.target.value))}
+                            className="w-full p-3 rounded-lg bg-[var(--surface-2)] border border-gray-700 text-white focus:border-[var(--primary)] outline-none"
+                        >
+                            <option value="1000">$1,000</option>
+                            <option value="2500">$2,500</option>
+                            <option value="5000">$5,000</option>
+                            <option value="10000">$10,000</option>
+                            <option value="25000">$25,000</option>
+                            <option value="50000">$50,000</option>
+                            <option value="100000">$100,000</option>
                         </select>
                     </div>
 
@@ -158,7 +257,13 @@ const ConsistencyCalculator = () => {
 
                     {/* Right: Analysis */}
                     <div className="space-y-6">
-                        <div className="glass-panel bg-[var(--surface-2)]/50 p-5 rounded-xl border border-white/5">
+                        <div className="glass-panel bg-[var(--surface-2)]/50 p-5 rounded-xl border border-white/5 relative">
+                            <button
+                                onClick={clearData}
+                                className="absolute top-5 right-5 text-xs text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                                ↺ Reset
+                            </button>
                             <h3 className="text-lg font-semibold mb-4 text-white">Summary</h3>
 
                             <div className="space-y-3">
@@ -173,6 +278,17 @@ const ConsistencyCalculator = () => {
                                     <span className="font-mono text-lg text-white">
                                         ${maxDay.profit.toFixed(2)}
                                     </span>
+                                </div>
+
+                                <div className="h-px bg-white/10 my-2"></div>
+
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-400">Valid Days ({'>'}${(accountSize * 0.005).toFixed(0)})</span>
+                                    <div className="text-right">
+                                        <span className={`font-mono text-lg font-bold ${validDaysCount >= MIN_TRADING_DAYS ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`}>
+                                            {validDaysCount}/{MIN_TRADING_DAYS}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="h-px bg-white/10 my-2"></div>
@@ -219,18 +335,45 @@ const ConsistencyCalculator = () => {
                         )}
 
                         {/* Withdrawal Status */}
+                        {/* Withdrawal Status */}
                         <div className="p-4 rounded-xl bg-[var(--surface-2)] border border-[var(--primary)]/20">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-400 uppercase tracking-widest">Withdrawable Payout (80%)</span>
-                                <span className={`text-2xl font-bold ${isWithdrawalEligible ? 'text-[var(--success)]' : 'text-gray-600'}`}>
-                                    ${potentialPayout.toFixed(2)}
+                            {/* Big Request Amount */}
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-sm text-gray-400 uppercase tracking-widest">
+                                    {isWithdrawalEligible ? "Profit To Request" : "Locked Profit"}
+                                </span>
+                                <span className={`text-3xl font-bold ${isWithdrawalEligible ? 'text-[var(--primary)] glow-text' : 'text-gray-500'}`}>
+                                    ${totalProfit > 0 ? totalProfit.toFixed(2) : "0.00"}
                                 </span>
                             </div>
+                            <p className="text-[10px] text-right text-gray-500 mb-4">*Request this full amount from the firm</p>
+
+                            {/* Small Receive Amount */}
+                            <div className="p-3 bg-black/20 rounded-lg border border-white/5">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm text-gray-300">You Will Receive (80%):</span>
+                                    <span className={`font-mono text-lg font-bold ${isWithdrawalEligible ? 'text-[var(--success)]' : 'text-gray-500'}`}>
+                                        ${totalProfit > 0 ? (totalProfit * 0.8).toFixed(2) : "0.00"}
+                                    </span>
+                                </div>
+                                <div className="flex justify-end">
+                                    <span className={`text-xs font-mono ${isWithdrawalEligible ? 'text-[var(--success)]' : 'text-gray-700'}`}>
+                                        ≈ ₹{((totalProfit * 0.8) * exchangeRate).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+                            </div>
+
                             {!isWithdrawalEligible && isProfitable && (
-                                <div className="mt-2 text-xs text-[var(--warning)] space-y-1">
-                                    {!isPassed && <p>• Fix Consistency Rule first.</p>}
+                                <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-300">
+                                    <p className="font-bold mb-1">🚫 Withdrawal Locked</p>
+                                    {!isPassed && (
+                                        <p>• <strong>Consistency Breach:</strong> You cannot withdraw yet. Increasing your profit to dilue the ${maxDay.profit} day will unlock this amount.</p>
+                                    )}
                                     {totalProfit < MIN_WITHDRAWAL_PROFIT && (
-                                        <p>• Minimum profit of ${MIN_WITHDRAWAL_PROFIT} required (Shortfall: ${payoutShortfall.toFixed(2)}).</p>
+                                        <p>• <strong>Below Minimum:</strong> You need <span className="text-white font-bold">${payoutShortfall.toFixed(2)}</span> more profit to reach the $35 minimum.</p>
+                                    )}
+                                    {validDaysCount < MIN_TRADING_DAYS && (
+                                        <p>• <strong>Not Enough Days:</strong> You need <span className="text-white font-bold">{daysShortfall}</span> more days with profit &gt;${minDailyProfit.toFixed(2)} (0.5%).</p>
                                     )}
                                 </div>
                             )}
@@ -289,7 +432,12 @@ const ConsistencyCalculator = () => {
                                                             </div>
                                                             <div className="text-right flex flex-col items-end">
                                                                 <span className="text-xs font-mono text-[var(--success)] block">+${projectedGross.toFixed(0)} Gross</span>
-                                                                <span className="text-[10px] text-gray-500 font-mono">(Payout: +${projectedPayout.toFixed(0)})</span>
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-[10px] text-gray-400 font-mono">Payout: ${projectedPayout.toFixed(0)}</span>
+                                                                    <span className="text-[10px] text-[var(--success)] font-mono">
+                                                                        ≈ ₹{(projectedPayout * exchangeRate).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     )

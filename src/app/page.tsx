@@ -19,7 +19,7 @@ export default function Home() {
             <span className="text-3xl font-bold text-black">G</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-center tracking-tight">
-            GOAT FUNDED <span className="text-[var(--primary)]">1$</span>
+            GOAT <span className="text-[var(--primary)]">FUNDED</span>
           </h1>
           <p className="text-xl text-[var(--text-secondary)] max-w-2xl text-center">
             Instant Account Calculator & Risk Manager
