@@ -14,6 +14,31 @@ export default function Home() {
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-[var(--primary)] opacity-5 blur-[100px] rounded-full pointer-events-none" />
 
       <main className="relative z-10 container mx-auto px-4 py-8 md:py-16">
+        {/* JSON-LD for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Goat Funded Instant Account Calculator",
+              "applicationCategory": "FinanceApplication",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "description": "A free tool to calculate consistency rules, valid trading days, and payouts for Goat Funded Trader instant accounts.",
+              "featureList": "Consistency Calculator, Risk Management, Payout Estimator, Prop Firm Rules",
+              "author": {
+                "@type": "Organization",
+                "name": "Goat Funded Community"
+              }
+            })
+          }}
+        />
+
         <div className="flex flex-col items-center justify-center mb-8 space-y-4">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--primary)] to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-4">
             <span className="text-3xl font-bold text-black">G</span>
