@@ -104,6 +104,14 @@ export default function Home() {
 
 
         <footer className="mt-20 text-center text-sm text-[var(--text-tertiary)] space-y-4 max-w-2xl mx-auto opacity-75 hover:opacity-100 transition-opacity">
+
+          {/* Personal Dedication */}
+          <div className="mb-6 transform hover:scale-105 transition-transform duration-300">
+            <p className="text-[10px] text-gray-500 font-mono italic">
+              ✨ Built for my friend <span className="text-[var(--primary)] font-bold">Sriram</span>, mostly so he stops calling me to do the math 📞�
+            </p>
+          </div>
+
           <p>© {new Date().getFullYear()} Goat Funded Trader Tools. Unofficial Utility.</p>
           <div className="text-xs border-t border-white/10 pt-4">
             <p className="font-semibold text-[var(--warning)] mb-1">⚠️ Disclaimer</p>
