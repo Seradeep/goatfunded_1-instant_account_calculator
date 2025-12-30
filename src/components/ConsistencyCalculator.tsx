@@ -72,10 +72,11 @@ const ConsistencyCalculator = () => {
         <div className="w-full max-w-4xl mx-auto p-4 space-y-8">
             <div className="text-center space-y-2">
                 <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--primary)] to-white">
-                    Detailed Consistency Analysis
+                    Consistency Analysis & Risk Calculator
                 </h2>
                 <p className="text-[var(--text-secondary)]">
-                    Enter your daily P&L to check if you meet the {ruleType}% consistency rule.
+                    Optimize your trading strategy for the {ruleType === '15_promo' ? '1K $1 Instant Account' : ruleType + '% Rule'} program.
+                    Calculate daily profit limits and ensure payout eligibility.
                 </p>
             </div>
 

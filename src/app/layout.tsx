@@ -13,8 +13,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Goat Funded $1 Calculator",
-  description: "Risk management and profit consistency calculator for the Goat Funded $1 account.",
+  title: 'Goat Funded $1 Instant Account Calculator | Risk Manager & Consistency Tool',
+  description: 'Calculate your daily profit consistency, plan your withdrawals, and manage risk for Goat Funded Trader Instant Accounts ($1 Promo, GOAT, Blitz, PRO).',
+  keywords: 'goat funded trader, instant funding, consistency calculator, trading calculator, risk management, prop firm tools',
+  openGraph: {
+    title: 'Goat Funded Consistency Calculator',
+    description: 'Master your consistency rules and payout planning.',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({

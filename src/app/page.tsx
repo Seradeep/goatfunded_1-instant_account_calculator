@@ -32,8 +32,8 @@ export default function Home() {
             <button
               onClick={() => setActiveView('consistency')}
               className={`group relative px-6 py-3 rounded-t-xl font-bold text-sm tracking-widest transition-all duration-200 border-t border-x ${activeView === 'consistency'
-                  ? 'bg-[var(--surface-1)] border-[var(--surface-3)] text-[var(--success)] z-20'
-                  : 'bg-[#050505] border-transparent text-[var(--text-tertiary)] hover:bg-[var(--surface-1)]/50 hover:text-[var(--text-secondary)]'
+                ? 'bg-[var(--surface-1)] border-[var(--surface-3)] text-[var(--success)] z-20'
+                : 'bg-[#050505] border-transparent text-[var(--text-tertiary)] hover:bg-[var(--surface-1)]/50 hover:text-[var(--text-secondary)]'
                 }`}
             >
               <div className="flex items-center gap-2">
@@ -50,8 +50,8 @@ export default function Home() {
             <button
               onClick={() => setActiveView('calculator')}
               className={`group relative px-6 py-3 rounded-t-xl font-bold text-sm tracking-widest transition-all duration-200 border-t border-x ${activeView === 'calculator'
-                  ? 'bg-[var(--surface-1)] border-[var(--surface-3)] text-[var(--primary)] z-20'
-                  : 'bg-[#050505] border-transparent text-[var(--text-tertiary)] hover:bg-[var(--surface-1)]/50 hover:text-[var(--text-secondary)]'
+                ? 'bg-[var(--surface-1)] border-[var(--surface-3)] text-[var(--primary)] z-20'
+                : 'bg-[#050505] border-transparent text-[var(--text-tertiary)] hover:bg-[var(--surface-1)]/50 hover:text-[var(--text-secondary)]'
                 }`}
             >
               <div className="flex items-center gap-2">
@@ -78,8 +78,16 @@ export default function Home() {
         </div>
 
 
-        <footer className="mt-20 text-center text-[var(--text-tertiary)] text-sm">
-          <p>© 2024 Goat Funded Trader Tools. Unofficial Utility.</p>
+        <footer className="mt-20 text-center text-sm text-[var(--text-tertiary)] space-y-4 max-w-2xl mx-auto opacity-75 hover:opacity-100 transition-opacity">
+          <p>© {new Date().getFullYear()} Goat Funded Trader Tools. Unofficial Utility.</p>
+          <div className="text-xs border-t border-white/10 pt-4">
+            <p className="font-semibold text-[var(--warning)] mb-1">⚠️ Disclaimer</p>
+            <p>
+              This tool is for educational and planning purposes only. Computers and software can make mistakes.
+              Always cross-check the results with your official account dashboard and rules.
+              We are not responsible for any financial losses or account breaches.
+            </p>
+          </div>
         </footer>
       </main>
     </div>
