@@ -168,7 +168,13 @@ const ConsistencyCalculator = () => {
                         </label>
                         <select
                             value={ruleType}
-                            onChange={(e) => setRuleType(e.target.value)}
+                            onChange={(e) => {
+                                const newRule = e.target.value;
+                                setRuleType(newRule);
+                                if (newRule === '15_promo') {
+                                    setAccountSize(1000);
+                                }
+                            }}
                             className="w-full p-3 rounded-lg bg-[var(--surface-2)] border border-gray-700 text-white focus:border-[var(--primary)] outline-none"
                         >
                             <option value="15_promo">1K Instant Account (3 Days / 15%)</option>
@@ -179,20 +185,28 @@ const ConsistencyCalculator = () => {
 
                     <div className="flex-1 min-w-[200px]">
                         <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-                            Account Size ($)
+                            Account Size ($) {ruleType === '15_promo' && <span className="text-xs text-[var(--primary)] ml-2">(Locked)</span>}
                         </label>
                         <select
                             value={accountSize}
                             onChange={(e) => setAccountSize(parseInt(e.target.value))}
-                            className="w-full p-3 rounded-lg bg-[var(--surface-2)] border border-gray-700 text-white focus:border-[var(--primary)] outline-none"
+                            disabled={ruleType === '15_promo'}
+                            className={`w-full p-3 rounded-lg border border-gray-700 text-white focus:border-[var(--primary)] outline-none transition-colors ${ruleType === '15_promo'
+                                    ? 'bg-[var(--surface-1)] text-gray-400 cursor-not-allowed border-dashed'
+                                    : 'bg-[var(--surface-2)]'
+                                }`}
                         >
                             <option value="1000">$1,000</option>
-                            <option value="2500">$2,500</option>
-                            <option value="5000">$5,000</option>
-                            <option value="10000">$10,000</option>
-                            <option value="25000">$25,000</option>
-                            <option value="50000">$50,000</option>
-                            <option value="100000">$100,000</option>
+                            {ruleType !== '15_promo' && (
+                                <>
+                                    <option value="2500">$2,500</option>
+                                    <option value="5000">$5,000</option>
+                                    <option value="10000">$10,000</option>
+                                    <option value="25000">$25,000</option>
+                                    <option value="50000">$50,000</option>
+                                    <option value="100000">$100,000</option>
+                                </>
+                            )}
                         </select>
                     </div>
 
